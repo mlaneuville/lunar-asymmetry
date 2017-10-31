@@ -84,14 +84,18 @@ def isotherm(y, t, phi, model, T=800):
     TM = 1600
     return np.array([y[0], y[2]])*(T-TS)/(TM-TS)
 
-def radio(t):
-    '''Returns radioactive heating as a function of time. Decay constant TAU1 is semi-arbitrary.'''
-    H0 = 250e9       # total radioactive heating, W
-    TAU1 = 1e9*YEAR  # radioactive decay constant
-    return H0*(np.exp(-t*MA/TAU1))
-
-
-#vget_heat_flow = np.vectorize(get_heat_flow)
+def radiogenic_heating(t):
+    '''Returns radioactive heating as a function of time since t0 (in years)'''
+    constants = {
+        '238U': {'H': 9.46e-5, 'tau': 4.47e9, 'x': 0.9928, 'c0': 20.3e-9},
+        '235U': {'H': 5.69e-4, 'tau': 7.04e8, 'x': 0.0071, 'c0': 20.3e-9},
+        '232Th': {'H': 2.64e-5, 'tau': 1.40e10, 'x': 1, 'c0': 79.5e-9},
+        '40K': {'H': 2.92e-5, 'tau': 1.25e9, 'x': 1.19e-4, 'c0': 240e-6},
+    }
+    heat = 0
+    for el in constants.values():
+        heat += el['c0']*el['H']*el['x']*np.exp((4.5e9-t)*np.log(2)/el['tau'])
+    return heat
 
 def plot_results(time, y, iso_n, iso_f, c, rand, run, suffix='', X=20e3):  
     
