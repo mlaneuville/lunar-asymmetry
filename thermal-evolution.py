@@ -83,7 +83,7 @@ def partitioning(y):
     mean_crust = 0.5*(y[0]+y[2])
     return 1 - volume(mean_crust)/VOL_MANTLE
 
-def isotherm(y, t, phi, model, T=800):
+def isotherm(y, t, phi, T=800):
     '''Returns the depth of an isotherm for a given timestep.'''
     TS = 250
     TM = 1600
@@ -247,11 +247,9 @@ class Evolution:
         S0 = 1361
         Ts = 331
         sig = 5.67e-8
-        if side == 'NS':
+        if side == 'NS' and model != 'symmetrical':
             Ts = ((S0/2 + 4*S0*(5/self.semimajor)**2)/sig)**0.25
 
-        if side == 'NS' and (model == 'global' or model == 'symmetrical'):
-            Ts = 331
             
         q = 2*(1600-Ts)/min(d, np.sqrt(t*MA*1e-6))
         return q
@@ -290,7 +288,7 @@ class Evolution:
 
         for i, t in enumerate(self.time):
             self.compo[i] = partitioning(self.output[i])
-            self.iso_n[i], self.iso_f[i] = isotherm(self.output[i], t, phi, self.run)
+            self.iso_n[i], self.iso_f[i] = isotherm(self.output[i], t, phi)
             self.hfs_n[i] = self.get_heat_flow('NS', t, self.output[i][0], phi, self.run)
             self.hfs_f[i] = self.get_heat_flow('FS', t, self.output[i][2], phi, self.run)
             self.orbit[i] = self.orbital_distance(t)/RE
@@ -358,8 +356,10 @@ def generate_runs(n):
 if __name__ == '__main__':
 
     PARSER = argparse.ArgumentParser()
-    PARSER.add_argument('-r', '--run', help="Run type")
-    PARSER.add_argument('-n', '--num', default=10, type=int, help="Number of runs")
+    PARSER.add_argument('-r', '--run', choices=['delay', 'symmetrical'],
+                        help="Run type")
+    PARSER.add_argument('-n', '--num', default=10, type=int,
+                        help="Number of runs")
     ARGS = PARSER.parse_args()
 
     
