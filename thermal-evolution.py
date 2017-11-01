@@ -244,7 +244,7 @@ class Evolution:
 
     def solve(self, phi=0.0):
         yinit = np.array([0.0, 0.0, 0.0, 0.0]) 
-        self.output = odeint(self.deriv, yinit, self.time, args=(self.run, phi, self.delay))
+        self.output = odeint(self.deriv, yinit, self.time, args=(self.run, phi, self.delay), rtol=1e-1)
 
         tfinal = np.where(self.output[:,2] > 70e3)[0][0]
         self.output = self.output[:tfinal]
