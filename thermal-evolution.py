@@ -317,7 +317,8 @@ class Evolution:
         return [mg_ns.mean(), mg_ns.std(), mg_fs.mean(), mg_fs.std()]
 
     def get_crust_stats(self):
-        return self.output[-1, 0], self.output[-1, 2]     
+        idx = np.where(self.delay > self.time)[0][-1]
+        return self.output[-1, 0], self.output[-1, 2], self.output[idx, 2]
 
     def plot(self):
         plot_results(self.time, 
@@ -373,10 +374,12 @@ if __name__ == '__main__':
         params['farside_mean'] = stats[2]
         params['farside_std'] = stats[3]
 
-        crustns, crustfs = s.get_crust_stats()
+        crustns, crustfs, front = s.get_crust_stats()
 
         params['nearside_crust'] = crustns
         params['farside_crust'] = crustfs
+        params['front'] = front
+
     
     with open('dat/data.txt', 'w') as outfile:
         json.dump(d, outfile)
