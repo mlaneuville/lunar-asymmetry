@@ -195,16 +195,7 @@ def plot_results(time, y, iso_n, iso_f, c, rand, run, suffix='', X=20e3):
 
 
 class Evolution:
-
-    #def __init__(self, F0=0.3, F1=0.15, tau=10, delay=0, 
-    #             depth_min_ns=0, depth_max_ns=5e3,
-    #             depth_min_fs=0, depth_max_fs=5e3):
-    #self.sampled_depth_ns = [depth_min_ns, depth_max_ns]
-    #self.sampled_depth_fs = [depth_min_fs, depth_max_fs]
-    # parameters.append({'F0':F0, 'F1':F1, 'tau':tau, 'delay':delay}
-
     def __init__(self, run, F0=0.3, F1=0.15, tau=10, delay=0, random='normal'):
-        print("Initializing: " + run)
         self.run = run
         self.rand = random
         self.time = np.linspace(0, 100, 3000)
@@ -262,9 +253,15 @@ class Evolution:
         self.compo = np.zeros(len(self.output))
         self.iso_n = np.zeros(len(self.output))
         self.iso_f = np.zeros(len(self.output))
+
         for i, t in enumerate(self.time):
             self.compo[i] = partitioning(self.output[i])
             self.iso_n[i], self.iso_f[i] = isotherm(self.output[i], t, phi, self.run)
+
+        print("tfinal: %.1f Ma, crust ns/fs: %.1f/%.1f km" % (
+              self.time[-1],
+              self.output[-1, 0]/1e3,
+              self.output[-1, 2]/1e3))
 
     def get_mg_distribution(self, rand='normal'):
         y = self.output
@@ -296,10 +293,9 @@ class Evolution:
         return [mg_ns.mean(), mg_ns.std(), mg_fs.mean(), mg_fs.std()]
 
     def get_crust_stats(self):
-        return self.output[-1, 0]        
+        return self.output[-1, 0], self.output[-1, 2]     
 
     def plot(self):
-        #idx = np.where(self.output[2] <= 60e3)
         plot_results(self.time, 
                      self.output, 
                      self.iso_n,
@@ -310,7 +306,7 @@ class Evolution:
                      suffix='%s-%s' % (self.run, self.rand))
 
 def generate_runs(n):
-    '''nice doc'''
+    '''Generate a list of parameter sets to explore phase space.'''
     parameters = []
     for i in range(n):
         F0 = random.randint(20, 50)/100
@@ -321,18 +317,6 @@ def generate_runs(n):
 
     return parameters
 
-# Symmetrical crystallization
-
-#evo = Evolution("symmetrical")
-#evo.solve()
-#evo.plot()
-#
-## Influence of earthshine
-#
-#evo = Evolution("earthshine")
-#evo.solve()
-#evo.plot()
-#
 
 if __name__ == '__main__':
 
@@ -352,7 +336,7 @@ if __name__ == '__main__':
     out_stats = []
     
     for i, params in enumerate(d):
-        print("%04d, " % i)
+        print(params)
         s = Evolution(**params)
         s.solve()
 
@@ -363,9 +347,10 @@ if __name__ == '__main__':
         params['farside_mean'] = stats[2]
         params['farside_std'] = stats[3]
 
-        crust = s.get_crust_stats()
+        crustns, crustfs = s.get_crust_stats()
 
-        params['nearside_crust'] = crust
+        params['nearside_crust'] = crustns
+        params['farside_crust'] = crustfs
     
     with open('data.txt', 'w') as outfile:
         json.dump(d, outfile)
