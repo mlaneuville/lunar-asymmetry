@@ -389,5 +389,5 @@ if __name__ == '__main__':
         params['nearside_crust'] = crustns
         params['farside_crust'] = crustfs
     
-    with open('data.txt', 'w') as outfile:
+    with open('dat/data.txt', 'w') as outfile:
         json.dump(d, outfile)

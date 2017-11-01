@@ -4,3 +4,5 @@ syntax: glob
 *.eps
 *.p
 *.orig
+dat/*
+img/*
