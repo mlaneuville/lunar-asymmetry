@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
 from scipy.interpolate import interp1d
+from scipy.optimize import fsolve
 from math import exp
 from math import sqrt
 from glob import glob
@@ -53,8 +54,8 @@ MA = 1e6*YEAR       # a Ma in seconds
 RM = 1740e3 # moon radius
 RC = 400e3  # moon core radius
 RE = 6370e3 # earth radius
-MM = 6.0e24 # moon mass
-ME = 7.3e22 # earth mass
+MM = 5.972e24 # moon mass
+ME = 7.348e22 # earth mass
 D0 = 80e3  # initial depth at which the crust starts to crystallize
 VOL_MANTLE = 4*np.pi*(RM**3 - RC**3)/3
 
@@ -63,6 +64,9 @@ LATENT = 3e5   # latent heat of crystallization, J/kg
 RHO = 3300.      # average crustal density, kg
 CP = 1000.       # specific heat of the crust, J/K/kg
 GRAD_TL = 2.5e-4 #
+
+k2Q = 0.024
+A0 = RE
 
 def area(r):
     '''Returns area of the shell at radius RM-r.'''
@@ -203,20 +207,29 @@ class Evolution:
         self.time = np.linspace(0, 10, 1000) # in Ma
         self.output = 0
         self.compo= 0
-        self.F0 = F0
-        self.F1 = F1
+        self.semimajor = A0
         self.tau = tau
         self.delay = delay
+
+    def orbital_distance(self, t):
+        def orbit(a, t):
+            '''Eq. 4.213 from SSD'''
+            res = 2/13*a**(13./2)*(1-(A0/a)**(13./2))
+            res -= 3/2*k2Q*(G/ME)**0.5*RE**5*MM*t
+            return res
+        r = fsolve(orbit, self.semimajor*RE, factor=10, args=(t*MA))[0]
+        return max(A0, r)
 
     def get_heat_flow(self, side, t, d, phi, model):
         '''Heat flow from a conductive profile in the crust. Maximum value is set to the radiative heat flow.'''
         TAU2 = self.tau
+        self.semimajor = self.orbital_distance(t)/RE
         
         S0 = 1361
         Ts = 331
         sig = 5.67e-8
         if side == 'NS':
-            Ts = ((S0/2 + S0/2*np.exp(-t/TAU2))/sig)**0.25
+            Ts = ((S0/2 + S0*(5/self.semimajor)**2)/sig)**0.25
 
         if side == 'NS' and (model == 'global' or model == 'symmetrical'):
             Ts = 331
