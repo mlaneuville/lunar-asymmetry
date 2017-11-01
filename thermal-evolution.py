@@ -104,7 +104,26 @@ def radio(t):
         heat += el['c0']*el['H']*el['x']*np.exp((t0-t)*np.log(2)/el['tau'])
     return heat
 
-def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, rand, run, suffix='', X=20e3):
+def get_depths(y, rand='normal', X=20e3):
+    N = 1000
+    depths_ns, depths_fs = [], []
+
+    if rand == 'uniform':
+        depths_ns = random.rand(N)*X
+        depths_fs = random.rand(N)*X
+    elif rand == 'normal':
+        while len(depths_ns) < N:
+            r = random.normal(loc=23e3, scale=11.2e3)
+            if r > 1 and r < max(y[:,0]):
+                depths_ns.append(r)
+        while len(depths_fs) < N:
+            r = random.normal(loc=21.9e3, scale=9.8e3)
+            if r > 1 and r < max(y[:,2]):
+                depths_fs.append(r)
+
+    return depths_ns, depths_fs
+
+def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, rand, run, suffix=''):
     
     # crust size evolution
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -185,29 +204,14 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, rand, run, suffix=''
     plt.savefig("img/surface_hf"+"_"+suffix+".png", format="png", bbox_inches="tight")
 
     # composition sample
-    N = 1000
-    bins = np.linspace(40, 80, 41)
-        
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
     
-    if rand == 'uniform':
-        depths = random.rand(N)*X
-    elif rand == 'normal':
-        depths = []
-        while len(depths) < N:
-            r = random.normal(loc=20e3, scale=5e3)
-            if r > 0 and r < max(y[:,0]):
-                depths.append(r)
-        depths_fs = []
-        while len(depths_fs) < N:
-            r = random.normal(loc=20e3, scale=5e3)
-            if r > 0 and r < max(y[:,2]):
-                depths_fs.append(r)
-
+    depths_ns, depths_fs = get_depths(y, rand=rand)
     compo_NS = interp1d(y[:, 0], PCS_to_Mg(c))
     compo_FS = interp1d(y[:, 2], PCS_to_Mg(c))
 
-    ax.hist(compo_NS(depths), bins=bins, normed=1, facecolor='red', alpha=0.5, label='nearside')
+    bins = np.linspace(40, 80, 41)
+    ax.hist(compo_NS(depths_ns), bins=bins, normed=1, facecolor='red', alpha=0.5, label='nearside')
     if run != "symmetrical":
         ax.hist(compo_FS(depths_fs), bins=bins, normed=1, facecolor='green', alpha=0.5, label='farside')
         ax.legend(loc='best')
@@ -302,22 +306,7 @@ class Evolution:
         y = self.output
         c = self.compo
 
-        X = 20e3
-        N = 1000
-        if rand == 'uniform':
-            depths = random.rand(N)*X
-            depths_fs = random.rand(N)*X
-        elif rand == 'normal':
-            depths = []
-            while len(depths) < N:
-                r = random.normal(loc=23e3, scale=11.2e3)
-                if r > 1 and r < max(y[:,0]):
-                    depths.append(r)
-            depths_fs = []
-            while len(depths_fs) < N:
-                r = random.normal(loc=21.9e3, scale=9.8e3)
-                if r > 1 and r < max(y[:,2]):
-                    depths_fs.append(r)
+        depths, depths_fs = get_depths(y, rand=rand)
 
         compo_ns = interp1d(y[:, 0], PCS_to_Mg(c))
         mg_ns = compo_ns(depths)
