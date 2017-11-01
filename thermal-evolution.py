@@ -104,7 +104,7 @@ def radio(t):
         heat += el['c0']*el['H']*el['x']*np.exp((t0-t)*np.log(2)/el['tau'])
     return heat
 
-def plot_results(time, y, iso_n, iso_f, c, rand, run, suffix='', X=20e3):  
+def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, rand, run, suffix='', X=20e3):
     
     # crust size evolution
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -162,8 +162,29 @@ def plot_results(time, y, iso_n, iso_f, c, rand, run, suffix='', X=20e3):
     
     plt.savefig("img/composition_Mg"+"_"+suffix+".png", format="png", bbox_inches="tight")
 
+    # orbital distance
+    f, ax = plt.subplots(1, 1, figsize=(8, 8))
+    ax.plot(time, a, lw=2)
+    ax.set_xlabel("Time [Ma]")
+    ax.set_ylabel("Semimajor axis [R$_{earth}$]")
+    ax.set_xscale("log")
+    ax.grid()
+
+    plt.savefig("img/semimajor"+"_"+suffix+".png", format="png", bbox_inches="tight")
+
+    # surface properties
+    f, ax = plt.subplots(1, 1, figsize=(8, 8))
+    ax.plot(time, hfs_n, lw=2, label='nearside')
+    ax.plot(time, hfs_f, lw=2, label='farside')
+    ax.set_xlabel("Time [Ma]")
+    ax.set_ylabel("Surface heat flow [W/m$^2$]")
+    ax.set_xscale("log")
+    ax.legend(loc='best')
+    ax.grid()
+
+    plt.savefig("img/surface_hf"+"_"+suffix+".png", format="png", bbox_inches="tight")
+
     # composition sample
-    
     N = 1000
     bins = np.linspace(40, 80, 41)
         
@@ -201,14 +222,13 @@ def plot_results(time, y, iso_n, iso_f, c, rand, run, suffix='', X=20e3):
 
 
 class Evolution:
-    def __init__(self, run, F0=0.3, F1=0.15, tau=10, delay=0, random='normal'):
+    def __init__(self, run, delay=0, random='normal'):
         self.run = run
         self.rand = random
-        self.time = np.linspace(0, 10, 1000) # in Ma
+        self.time = np.logspace(-6, 2, 1000) # in Ma
         self.output = 0
         self.compo= 0
         self.semimajor = A0
-        self.tau = tau
         self.delay = delay
 
     def orbital_distance(self, t):
@@ -222,19 +242,18 @@ class Evolution:
 
     def get_heat_flow(self, side, t, d, phi, model):
         '''Heat flow from a conductive profile in the crust. Maximum value is set to the radiative heat flow.'''
-        TAU2 = self.tau
         self.semimajor = self.orbital_distance(t)/RE
         
         S0 = 1361
         Ts = 331
         sig = 5.67e-8
         if side == 'NS':
-            Ts = ((S0/2 + S0*(5/self.semimajor)**2)/sig)**0.25
+            Ts = ((S0/2 + 4*S0*(5/self.semimajor)**2)/sig)**0.25
 
         if side == 'NS' and (model == 'global' or model == 'symmetrical'):
             Ts = 331
             
-        q = 2*(1600-Ts)/d
+        q = 2*(1600-Ts)/min(d, np.sqrt(t*MA*1e-6))
         return q
 
     def deriv(self, y, t, model, phi, delay=0):
@@ -265,10 +284,16 @@ class Evolution:
         self.compo = np.zeros(len(self.output))
         self.iso_n = np.zeros(len(self.output))
         self.iso_f = np.zeros(len(self.output))
+        self.hfs_n = np.zeros(len(self.output))
+        self.hfs_f = np.zeros(len(self.output))
+        self.orbit = np.zeros(len(self.output))
 
         for i, t in enumerate(self.time):
             self.compo[i] = partitioning(self.output[i])
             self.iso_n[i], self.iso_f[i] = isotherm(self.output[i], t, phi, self.run)
+            self.hfs_n[i] = self.get_heat_flow('NS', t, self.output[i][0], phi, self.run)
+            self.hfs_f[i] = self.get_heat_flow('FS', t, self.output[i][2], phi, self.run)
+            self.orbit[i] = self.orbital_distance(t)/RE
 
         print("tfinal: %.1f Ma, crust ns/fs: %.1f/%.1f km" % (
               self.time[-1],
@@ -313,6 +338,9 @@ class Evolution:
                      self.iso_n,
                      self.iso_f,
                      self.compo, 
+                     self.orbit,
+                     self.hfs_n,
+                     self.hfs_f,
                      rand=self.rand,
                      run=self.run,
                      suffix='%s-%s' % (self.run, self.rand))
@@ -321,11 +349,8 @@ def generate_runs(n):
     '''Generate a list of parameter sets to explore phase space.'''
     parameters = []
     for i in range(n):
-        #F0 = random.randint(20, 50)/100
-        #F1 = random.randint(5, F0*100)/100
-        tau = random.random()*20
         delay = random.random()
-        parameters.append({'run': 'delay', 'tau':tau, 'delay':delay})
+        parameters.append({'run': 'delay', 'delay':delay})
 
     return parameters
 
