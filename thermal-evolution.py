@@ -224,19 +224,17 @@ class Evolution:
         q = 2*(1600-Ts)/d
         return q
 
-
     def deriv(self, y, t, model, phi, delay=0):
         '''
         Effective cooling rate determines the crystallization rate:
             Qsurf - Qradio = (latent + cooling)*dr/dt
         The only difference is that Qsurf is larger on the farside.
         '''
-    
         denumFS = area(y[2])*LATENT*RHO + RHO*volume(y[2])*CP*GRAD_TL
-        numFS = (self.get_heat_flow('FS', t, phi, model)*area(0) - radio(t))
+        numFS = (self.get_heat_flow('FS', t, y[2], phi, model)*area(0) - radio(t)*RHO*VOL_MANTLE)
     
         denumNS = area(y[0])*LATENT*RHO + RHO*volume(y[0])*CP*GRAD_TL
-        numNS = (self.get_heat_flow('NS', t, phi, model)*area(0) - radio(t))
+        numNS = (self.get_heat_flow('NS', t, y[0], phi, model)*area(0) - radio(t)*RHO*VOL_MANTLE)
         
         if model == "delay" and t < delay:
             denumNS *= 1e5
