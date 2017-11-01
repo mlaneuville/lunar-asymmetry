@@ -1,0 +1,6 @@
+syntax: glob
+
+*.png
+*.eps
+*.p
+*.orig
