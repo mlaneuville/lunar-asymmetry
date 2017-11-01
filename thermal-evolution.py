@@ -104,26 +104,33 @@ def radio(t):
         heat += el['c0']*el['H']*el['x']*np.exp((t0-t)*np.log(2)/el['tau'])
     return heat
 
-def get_depths(y, rand='normal', X=20e3):
+def get_depths(y, mixing='normal', X=20e3):
     N = 1000
     depths_ns, depths_fs = [], []
 
-    if rand == 'uniform':
+    mu = {'ns':23e3, 'fs':21.9e3}
+    std = {'ns':11.2e3, 'fs':9.8e3}
+
+    if mixing == 'normal-centered':
+        mu['fs'] = mu['ns']
+        std['fs'] = std['ns']
+
+    if mixing == 'uniform':
         depths_ns = random.rand(N)*X
         depths_fs = random.rand(N)*X
-    elif rand == 'normal':
+    elif mixing.split('-')[0] == 'normal':
         while len(depths_ns) < N:
-            r = random.normal(loc=23e3, scale=11.2e3)
+            r = random.normal(loc=mu['ns'], scale=std['ns'])
             if r > 1 and r < max(y[:,0]):
                 depths_ns.append(r)
         while len(depths_fs) < N:
-            r = random.normal(loc=21.9e3, scale=9.8e3)
+            r = random.normal(loc=mu['fs'], scale=std['fs'])
             if r > 1 and r < max(y[:,2]):
                 depths_fs.append(r)
 
     return depths_ns, depths_fs
 
-def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, rand, run, suffix=''):
+def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, mixing, run, suffix=''):
     
     # crust size evolution
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -206,7 +213,7 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, rand, run, suffix=''
     # composition sample
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
     
-    depths_ns, depths_fs = get_depths(y, rand=rand)
+    depths_ns, depths_fs = get_depths(y, mixing=mixing)
     compo_NS = interp1d(y[:, 0], PCS_to_Mg(c))
     compo_FS = interp1d(y[:, 2], PCS_to_Mg(c))
 
@@ -226,9 +233,9 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, rand, run, suffix=''
 
 
 class Evolution:
-    def __init__(self, run, delay=0, random='normal'):
+    def __init__(self, run, delay=0, mixing='normal'):
         self.run = run
-        self.rand = random
+        self.mixing = mixing
         self.time = np.logspace(-6, 2, 1000) # in Ma
         self.output = 0
         self.compo= 0
@@ -302,11 +309,11 @@ class Evolution:
               self.output[-1, 0]/1e3,
               self.output[-1, 2]/1e3))
 
-    def get_mg_distribution(self, rand='normal'):
+    def get_mg_distribution(self, mixing='normal'):
         y = self.output
         c = self.compo
 
-        depths, depths_fs = get_depths(y, rand=rand)
+        depths, depths_fs = get_depths(y, mixing=mixing)
 
         compo_ns = interp1d(y[:, 0], PCS_to_Mg(c))
         mg_ns = compo_ns(depths)
@@ -329,9 +336,9 @@ class Evolution:
                      self.orbit,
                      self.hfs_n,
                      self.hfs_f,
-                     rand=self.rand,
+                     mixing=self.mixing,
                      run=self.run,
-                     suffix='%s-%s' % (self.run, self.rand))
+                     suffix='%s-%s' % (self.run, self.mixing))
 
 def generate_runs(n):
     '''Generate a list of parameter sets to explore phase space.'''
@@ -346,15 +353,19 @@ def generate_runs(n):
 if __name__ == '__main__':
 
     PARSER = argparse.ArgumentParser()
-    PARSER.add_argument('-r', '--run', choices=['delay', 'symmetrical'],
+    PARSER.add_argument('-r', '--run', default='delay', type=str,
+                        choices=['delay', 'symmetrical'],
                         help="Run type")
+    PARSER.add_argument('-m', '--mixing', default='normal', type=str,
+                        choices=['normal', 'uniform', 'normal-centered'],
+                        help="Mixing model")
     PARSER.add_argument('-n', '--num', default=10, type=int,
                         help="Number of runs")
     ARGS = PARSER.parse_args()
 
     
     if ARGS.run:
-        evo = Evolution(ARGS.run)
+        evo = Evolution(ARGS.run, mixing=ARGS.mixing)
         evo.solve()
         evo.plot()
         sys.exit()
