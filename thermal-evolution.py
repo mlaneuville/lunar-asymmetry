@@ -85,8 +85,10 @@ def isotherm(y, t, phi, model, T=800):
     TM = 1600
     return np.array([y[0], y[2]])*(T-TS)/(TM-TS)
 
-def radiogenic_heating(t):
+def radio(t):
     '''Returns radioactive heating as a function of time since t0 (in years)'''
+    t0 = 4.5e9
+    t *= 1e6 # t is given in Ma
     constants = {
         '238U': {'H': 9.46e-5, 'tau': 4.47e9, 'x': 0.9928, 'c0': 20.3e-9},
         '235U': {'H': 5.69e-4, 'tau': 7.04e8, 'x': 0.0071, 'c0': 20.3e-9},
@@ -95,7 +97,7 @@ def radiogenic_heating(t):
     }
     heat = 0
     for el in constants.values():
-        heat += el['c0']*el['H']*el['x']*np.exp((4.5e9-t)*np.log(2)/el['tau'])
+        heat += el['c0']*el['H']*el['x']*np.exp((t0-t)*np.log(2)/el['tau'])
     return heat
 
 def plot_results(time, y, iso_n, iso_f, c, rand, run, suffix='', X=20e3):  
@@ -198,7 +200,7 @@ class Evolution:
     def __init__(self, run, F0=0.3, F1=0.15, tau=10, delay=0, random='normal'):
         self.run = run
         self.rand = random
-        self.time = np.linspace(0, 100, 3000)
+        self.time = np.linspace(0, 10, 1000) # in Ma
         self.output = 0
         self.compo= 0
         self.F0 = F0
@@ -206,21 +208,20 @@ class Evolution:
         self.tau = tau
         self.delay = delay
 
-    def get_heat_flow(self, side, t, phi, model):
+    def get_heat_flow(self, side, t, d, phi, model):
         '''Heat flow from a conductive profile in the crust. Maximum value is set to the radiative heat flow.'''
+        TAU2 = self.tau
         
-        F_FS = self.F0 # W/m2
-        dF0 = (self.F0 - self.F1)  # W/m2
-        TAU2 = self.tau*1e6*YEAR
-        
+        S0 = 1361
+        Ts = 331
+        sig = 5.67e-8
         if side == 'NS':
-            q = F_FS - dF0*np.exp(-t*MA/TAU2)*np.cos(phi)
-        elif side == 'FS':
-            q = F_FS
-        
+            Ts = ((S0/2 + S0/2*np.exp(-t/TAU2))/sig)**0.25
+
         if side == 'NS' and (model == 'global' or model == 'symmetrical'):
-            q = F_FS
+            Ts = 331
             
+        q = 2*(1600-Ts)/d
         return q
 
 
@@ -243,7 +244,7 @@ class Evolution:
         return np.array([y[1], MA*numNS/denumNS, y[3], MA*numFS/denumFS])
 
     def solve(self, phi=0.0):
-        yinit = np.array([0.0, 0.0, 0.0, 0.0]) 
+        yinit = np.array([1.0, 0.0, 1.0, 0.0])
         self.output = odeint(self.deriv, yinit, self.time, args=(self.run, phi, self.delay), rtol=1e-1)
 
         tfinal = np.where(self.output[:,2] > 70e3)[0][0]
@@ -276,12 +277,12 @@ class Evolution:
             depths = []
             while len(depths) < N:
                 r = random.normal(loc=23e3, scale=11.2e3)
-                if r > 0 and r < max(y[:,0]):
+                if r > 1 and r < max(y[:,0]):
                     depths.append(r)
             depths_fs = []
             while len(depths_fs) < N:
                 r = random.normal(loc=21.9e3, scale=9.8e3)
-                if r > 0 and r < max(y[:,2]):
+                if r > 1 and r < max(y[:,2]):
                     depths_fs.append(r)
 
         compo_ns = interp1d(y[:, 0], PCS_to_Mg(c))
@@ -309,11 +310,11 @@ def generate_runs(n):
     '''Generate a list of parameter sets to explore phase space.'''
     parameters = []
     for i in range(n):
-        F0 = random.randint(20, 50)/100
-        F1 = random.randint(0, F0*100)/100
-        tau = random.randint(1, 200)/10
-        delay = random.randint(0, 200)/10
-        parameters.append({'run': 'delay', 'F0':F0, 'F1':F1, 'tau':tau, 'delay':delay})
+        #F0 = random.randint(20, 50)/100
+        #F1 = random.randint(5, F0*100)/100
+        tau = random.random()*20
+        delay = random.random()
+        parameters.append({'run': 'delay', 'tau':tau, 'delay':delay})
 
     return parameters
 
