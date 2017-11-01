@@ -9,6 +9,7 @@ from math import exp
 from math import sqrt
 from glob import glob
 from numpy import random
+import argparse
 import json
 import sys
 
@@ -335,14 +336,19 @@ def generate_runs(n):
 
 if __name__ == '__main__':
 
-    # Initial onset delay
-    
-    evo = Evolution("delay", F0=0.2, delay=5)
-    evo.solve(phi=0)
-    evo.plot()
-    #sys.exit()
+    PARSER = argparse.ArgumentParser()
+    PARSER.add_argument('-r', '--run', help="Run type")
+    PARSER.add_argument('-n', '--num', default=10, type=int, help="Number of runs")
+    ARGS = PARSER.parse_args()
 
-    d = generate_runs(100)
+    
+    if ARGS.run:
+        evo = Evolution(ARGS.run)
+        evo.solve()
+        evo.plot()
+        sys.exit()
+
+    d = generate_runs(ARGS.num)
     out_stats = []
     
     for i, params in enumerate(d):
