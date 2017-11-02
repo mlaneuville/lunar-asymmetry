@@ -226,7 +226,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--load',
                         help="Load results instead of running sim")
-    parser.add_argument('--rheo', default='farside',
+    parser.add_argument('--rheo', default='farside', type=str,
+                        choices=["farside", "nearside", "pkt"],
                         help="Choose between near and farside rheology")
     parser.add_argument('-b', '--basins', default=5, type=int,
                         help="Number of impacts basins with size 40 < x < 50 km")
