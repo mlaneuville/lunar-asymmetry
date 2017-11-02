@@ -113,7 +113,7 @@ class Surface:
     def impact(self, x, y, R, loc):
         x *= self.Hxy
         y *= self.Hxy
-        
+
         for i in range(self.gridsize):
             # loop only over dist(i,j) < 2R
             dx = x-i*self.Hxy/self.gridsize
@@ -130,11 +130,14 @@ class Surface:
                     excavation = -int(self.gridsize * basin_shape(dist/R, R)/self.Hz)
                     for k in range(self.gridsize-excavation):
                         self.field[i,j,k] = self.field[i,j,k+excavation]
+                    for k in range(self.gridsize-excavation, self.gridsize):
+                        self.field[i,j,k] = self.field[i,j,k-1] + self.Hz/self.gridsize
                 elif dist < 2*R: # outside, use ejecta blanket
                     ejecta = int(self.gridsize * ejecta_thickness(dist, R)/self.Hz)
                     for k in range(self.gridsize-1, ejecta, -1):
                         self.field[i,j,k] = self.field[i,j,k-ejecta]
-                    self.field[i,j,:ejecta] = max_excavation(R)
+                    depth = int(self.gridsize*max_excavation(R)/self.Hz)
+                    self.field[i,j,:ejecta] = self.field[int(x),int(y),depth]
                     
         return
 
