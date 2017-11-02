@@ -13,7 +13,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from copy import deepcopy
 import pickle
 
-font = {'family' : 'normal', 'size'   : 14}
+font = {'size'   : 14}
 rc('font', **font)
 
 def ejecta_thickness(r, R=1, a=0.14, b=0.74, c=-3.0):
@@ -131,7 +131,7 @@ class Surface:
                     
         return
 
-    def plot(self):
+    def plot(self, suffix):
         fig, axarr = plt.subplots(1, 1, figsize=(8, 8))
 
         im = axarr.imshow(self.output[-1][:,:].T, extent=[0, 50, 50, 0])
@@ -143,7 +143,7 @@ class Surface:
         cb.set_label('Depth of origin [km]') #, rotation=270)
         cb.set_ticks(range(0, int(max(np.reshape(self.output[-1][:,:], (100**2,)))), 5))
 
-        plt.savefig("moon-surface.png", format='png', dpi=300, bbox_inches='tight')
+        plt.savefig("img/moon-surface"+suffix+".png", format='png', dpi=300, bbox_inches='tight')
         plt.show()
 
         bins = np.linspace(0, 50, 10)
@@ -167,7 +167,7 @@ class Surface:
         axarr.set_ylabel("Surface fraction")
         axarr.grid()
 
-        plt.savefig("depth-distribution.eps", format='eps', bbox_inches='tight')
+        plt.savefig("img/depth-distribution"+suffix+".eps", format='eps', bbox_inches='tight')
         plt.show()
 
 def main(rheo):
@@ -188,19 +188,20 @@ def main(rheo):
             moon.impact(x, y, D/2, loc=rheo)
         
             if ((i % output) == output-1) or (i == n_impacts - 1):
-                print(" * ploc %d" % i)
                 moon.save_state()
 
-    fname = 'moon-surface'
+    fname = 'dat/moon-surface'
+    suffix = ''
     for epoch in history:
         if epoch['number'] > 0:
-            fname += '-%s%d' % (epoch['era'], epoch['number'])
-    fname += '-%s.p' % rheo
+            suffix += '-%s%d' % (epoch['era'], epoch['number'])
+    suffix += '-%s' % rheo
+    fname += suffix+'.p'
 
     with open(fname, "wb") as f:
         pickle.dump(moon.output, f)
 
-    moon.plot()
+    moon.plot(suffix)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
