@@ -104,21 +104,37 @@ def radio(t):
         heat += el['c0']*el['H']*el['x']*np.exp((t0-t)*np.log(2)/el['tau'])
     return heat
 
-def get_depths(y, mixing='normal', X=20e3):
+def get_depths(y, mixing='normal-middle', X=20e3):
     N = 1000
     depths_ns, depths_fs = [], []
 
-    mu = {'ns':23e3, 'fs':21.9e3}
-    std = {'ns':11.2e3, 'fs':9.8e3}
+    db_mu = {
+        'low': {'ns':24.9e3, 'fs':25.8e3},
+        'middle': {'ns':24.9e3, 'fs':25.8e3},
+        'high': {'ns':24.9e3, 'fs':25.8e3}
+    }
 
-    if mixing == 'normal-centered':
-        mu['fs'] = mu['ns']
-        std['fs'] = std['ns']
+    db_std = {
+        'low': {'ns':9.4e3, 'fs':10.2e3},
+        'middle': {'ns':9.4e3, 'fs':10.2e3},
+        'high': {'ns':9.4e3, 'fs':10.2e3}
+    }
 
-    if mixing == 'uniform':
+    mixmodel = mixing.split('-')
+    if mixmodel[0] == 'uniform':
         depths_ns = random.rand(N)*X
         depths_fs = random.rand(N)*X
-    elif mixing.split('-')[0] == 'normal':
+    elif mixmodel[0] == 'normal':
+        if mixmodel[1] == 'centered':
+            mu['ns'] = db_mu['middle']['ns']
+            mu['fs'] = mu['ns']
+            std['ns'] = db_std['middle']['ns']
+            std['fs'] = std['ns']
+        else:
+            mu['ns'] = db_mu[mixmodel[1]]['ns']
+            mu['fs'] = db_mu[mixmodel[1]]['fs']
+            std['ns'] = db_std[mixmodel[1]]['ns']
+            std['fs'] = db_std[mixmodel[1]]['fs']
         while len(depths_ns) < N:
             r = random.normal(loc=mu['ns'], scale=std['ns'])
             if r > 1 and r < max(y[:,0]):
@@ -127,6 +143,9 @@ def get_depths(y, mixing='normal', X=20e3):
             r = random.normal(loc=mu['fs'], scale=std['fs'])
             if r > 1 and r < max(y[:,2]):
                 depths_fs.append(r)
+    else:
+        print("This shouldn't happen.")
+        sys.exit(1)
 
     return depths_ns, depths_fs
 
@@ -357,13 +376,13 @@ if __name__ == '__main__':
                         choices=['delay', 'symmetrical'],
                         help="Run type")
     PARSER.add_argument('-m', '--mixing', default='normal', type=str,
-                        choices=['normal', 'uniform', 'normal-centered'],
+                        choices=['normal-low', 'normal-middle', 'normal-high',
+                                 'uniform', 'normal-centered'],
                         help="Mixing model")
     PARSER.add_argument('-n', '--num', default=10, type=int,
                         help="Number of runs")
     ARGS = PARSER.parse_args()
 
-    
     if ARGS.run:
         evo = Evolution(ARGS.run, mixing=ARGS.mixing)
         evo.solve()
