@@ -188,6 +188,7 @@ def main(rheo, giant, large, small):
             moon.impact(x, y, D/2, loc=rheo)
         
             if ((i % output) == output-1) or (i == n_impacts - 1):
+                print(i)
                 moon.save_state()
 
     fname = 'dat/moon-surface'
@@ -203,22 +204,30 @@ def main(rheo, giant, large, small):
 
     moon.plot(suffix)
 
+def get_impactors_count(giant):
+    '''Return number of impacts per bin for a given number of giant imapcts.'''
+    a = giant/40**(-3) # N(x > D) = a D**(-3)
+    large = int(a*20**(-3) - giant)
+    small = int(a - large - giant)
+    print("Total number of impacts: %d" % a)
+    print("\t- %d with D > 40 km" % giant)
+    print("\t- %d with 20 < D < 40 km" % large)
+    print("\t- %d with D < 20 km" % small)
+    return (giant, large, small)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--load',
                         help="Load results instead of running sim")
     parser.add_argument('--rheo', default='farside',
                         help="Choose between near and farside rheology")
-    parser.add_argument('-g', '--giant', default=2, type=int,
-                        help="Number of impacts with size 40 < x < 50 km")
-    parser.add_argument('-l', '--large', default=100, type=int,
-                        help="Number of impacts with size 20 < x < 50 km")
-    parser.add_argument('-s', '--small', default=45000, type=int,
-                        help="Number of impacts with size 1 < x < 20 km")
+    parser.add_argument('-b', '--basins', default=5, type=int,
+                        help="Number of impacts basins with size 40 < x < 50 km")
     args = parser.parse_args()
 
     if not args.load:
-        main(args.rheo, args.giant, args.large, args.small)
+        giant, large, small = get_impactors_count(args.basins)
+        main(args.rheo, giant, large, small)
     else:
         with open(args.load, "rb") as f:
             surface = pickle.load(f)
