@@ -138,7 +138,7 @@ class Surface:
                     
         return
 
-    def plot(self, suffix):
+    def plot(self, suffix, show):
         fig, axarr = plt.subplots(1, 1, figsize=(8, 8))
 
         im = axarr.imshow(self.output[-1][:,:].T, extent=[0, 50, 50, 0])
@@ -151,7 +151,8 @@ class Surface:
         cb.set_ticks(range(0, int(max(np.reshape(self.output[-1][:,:], (100**2,)))), 5))
 
         plt.savefig("img/moon-surface"+suffix+".png", format='png', dpi=300, bbox_inches='tight')
-        plt.show()
+        if show:
+            plt.show()
 
         bins = np.linspace(0, 50, 10)
         data, labels = [], []
@@ -175,9 +176,10 @@ class Surface:
         axarr.grid()
 
         plt.savefig("img/depth-distribution"+suffix+".eps", format='eps', bbox_inches='tight')
-        plt.show()
+        if show:
+            plt.show()
 
-def main(rheo, giant, large, small):
+def main(rheo, giant, large, small, show=False):
     moon = Surface(100)
 
     history = [{'era':'giant', 'number':giant, 'output':min(giant,2)},
@@ -209,7 +211,7 @@ def main(rheo, giant, large, small):
     with open(fname, "wb") as f:
         pickle.dump(moon.output, f)
 
-    moon.plot(suffix)
+    moon.plot(suffix, show)
 
 def get_impactors_count(giant):
     '''Return number of impacts per bin for a given number of giant imapcts.'''
@@ -231,14 +233,17 @@ if __name__ == "__main__":
                         help="Choose between near and farside rheology")
     parser.add_argument('-b', '--basins', default=5, type=int,
                         help="Number of impacts basins with size 40 < x < 50 km")
+    parser.add_argument('-s', '--show', default=False, action="store_true",
+                        help="Toggle to show the figures at the end")
     args = parser.parse_args()
 
     if not args.load:
         giant, large, small = get_impactors_count(args.basins)
-        main(args.rheo, giant, large, small)
+        main(args.rheo, giant, large, small, args.show)
     else:
         with open(args.load, "rb") as f:
             surface = pickle.load(f)
+        suffix = "-"+"-".join(args.load.split("-")[2:6])[:-2]
         moon = Surface(100)
         moon.output = surface
-        moon.plot()
+        moon.plot(suffix, args.show)
