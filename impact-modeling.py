@@ -154,7 +154,7 @@ class Surface:
         if show:
             plt.show()
 
-        bins = np.linspace(0, 50, 10)
+        bins = np.linspace(0, 50, 20)
         data, labels = [], []
         for i in np.linspace(1, len(self.output)-1, 3):
             data.append(np.reshape(self.output[int(i)], (100**2,)))
@@ -166,8 +166,12 @@ class Surface:
         
         fig, axarr = plt.subplots(1, 1, figsize=(8, 8))
 
-        axarr.hist(data, bins=bins, normed=True, histtype='bar', label=labels, zorder=10)
-        axarr.plot(bins, norm.pdf(bins, mu, std))
+        labels = ['After D > 40 km impacts',
+                  'After 20 < D < 40 km impacts',
+                  'After D < 20 km impacts']
+
+        for epoch, l in zip(data, labels):
+            x, bins, _ = plt.hist(epoch, bins=bins, normed=True, alpha=0.8, label=l)
 
         axarr.set_xlim(0, 50)
         axarr.legend(loc="best")
@@ -175,7 +179,7 @@ class Surface:
         axarr.set_ylabel("Surface fraction")
         axarr.grid()
 
-        plt.savefig("img/depth-distribution"+suffix+".eps", format='eps', bbox_inches='tight')
+        plt.savefig("img/depth-distribution"+suffix+".png", format='png', bbox_inches='tight')
         if show:
             plt.show()
 
