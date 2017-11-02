@@ -54,11 +54,11 @@ def max_excavation(R, loc="farside"):
 def get_impact_distribution(era=''):
     '''Define impact population density.'''
     dmin, dmax = 1, 50
-    if era == 'basin':
+    if era == 'large':
         dmin, dmax = 20, 50
-    if era == 'recent':
+    if era == 'small':
         dmin, dmax = 1, 20
-    if era == 'huge':
+    if era == 'giant':
         dmin, dmax = 40, 50
 
     def get_constant(dmin, dmax):
@@ -88,9 +88,9 @@ class Surface:
 
         self.gridsize = n
         self.d = {}
-        self.d['basin'] = get_impact_distribution(era='basin')
-        self.d['recent'] = get_impact_distribution(era='recent')
-        self.d['huge'] = get_impact_distribution(era='huge')
+        self.d['large'] = get_impact_distribution(era='large')
+        self.d['small'] = get_impact_distribution(era='small')
+        self.d['giant'] = get_impact_distribution(era='giant')
         self.d['all'] = get_impact_distribution(era='')
         
         for i in range(self.gridsize):
@@ -170,12 +170,12 @@ class Surface:
         plt.savefig("img/depth-distribution"+suffix+".eps", format='eps', bbox_inches='tight')
         plt.show()
 
-def main(rheo):
+def main(rheo, giant, large, small):
     moon = Surface(100)
 
-    history = [{'era':'huge', 'number':2, 'output':2},
-               {'era':'basin', 'number':100, 'output':100},
-               {'era':'recent', 'number':45000, 'output':5000}]
+    history = [{'era':'giant', 'number':giant, 'output':min(giant,2)},
+               {'era':'large', 'number':large, 'output':min(large,100)},
+               {'era':'small', 'number':small, 'output':min(small,5000)}]
 
     for epoch in history:
         print(epoch)
@@ -205,14 +205,20 @@ def main(rheo):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--load', 
+    parser.add_argument('--load',
                         help="Load results instead of running sim")
-    parser.add_argument('--rheo', default='farside', 
+    parser.add_argument('--rheo', default='farside',
                         help="Choose between near and farside rheology")
+    parser.add_argument('-g', '--giant', default=2, type=int,
+                        help="Number of impacts with size 40 < x < 50 km")
+    parser.add_argument('-l', '--large', default=100, type=int,
+                        help="Number of impacts with size 20 < x < 50 km")
+    parser.add_argument('-s', '--small', default=45000, type=int,
+                        help="Number of impacts with size 1 < x < 20 km")
     args = parser.parse_args()
 
     if not args.load:
-        main(args.rheo)
+        main(args.rheo, args.giant, args.large, args.small)
     else:
         with open(args.load, "rb") as f:
             surface = pickle.load(f)
