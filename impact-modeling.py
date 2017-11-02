@@ -55,7 +55,7 @@ def get_impact_distribution(era=''):
     '''Define impact population density.'''
     dmin, dmax = 1, 50
     if era == 'large':
-        dmin, dmax = 20, 50
+        dmin, dmax = 20, 40
     if era == 'small':
         dmin, dmax = 1, 20
     if era == 'giant':
@@ -157,7 +157,7 @@ class Surface:
         if show:
             plt.show()
 
-        bins = np.linspace(0, 50, 20)
+        bins = np.linspace(0, 100, 40)
         data, labels = [], []
         for i in np.linspace(1, len(self.output)-1, 3):
             data.append(np.reshape(self.output[int(i)], (100**2,)))
