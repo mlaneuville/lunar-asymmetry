@@ -111,34 +111,41 @@ class Surface:
         return (x,y), D
     
     def impact(self, x, y, R, loc):
+        depth = int(self.gridsize*max_excavation(R)/self.Hz)
+        field2 = deepcopy(self.field)
+
         x *= self.Hxy
         y *= self.Hxy
 
-        for i in range(self.gridsize):
-            # loop only over dist(i,j) < 2R
-            dx = x-i*self.Hxy/self.gridsize
+        imin = int(x - 2*R)
+        imax = int(x + 2*R)
+        # loop only over dist(i,j) < 2R
+        for i in range(imin, imax):
+            dx = i-x
+            i = i % self.gridsize # make sure we are within the grid
             if abs(dx) > 2*R:
                 continue
+
             jmin = int(y - np.sqrt(4*R**2 - dx**2))
             jmax = int(y + np.sqrt(4*R**2 - dx**2))
+            for j in range(jmin ,jmax):
+                dy = j-y
+                j = j % self.gridsize # make sure we are within the grid
 
-            for j in range(max(0,jmin), min(self.Hxy,jmax)):
-                dy = y-j*self.Hxy/self.gridsize
                 dist = np.sqrt(dx**2 + dy**2)
-        
                 if dist < R: # within basin, use basin shape
                     excavation = -int(self.gridsize * basin_shape(dist/R, R)/self.Hz)
                     for k in range(self.gridsize-excavation):
-                        self.field[i,j,k] = self.field[i,j,k+excavation]
+                        field2[i,j,k] = self.field[i,j,k+excavation]
                     for k in range(self.gridsize-excavation, self.gridsize):
-                        self.field[i,j,k] = self.field[i,j,k-1] + self.Hz/self.gridsize
+                        field2[i,j,k] = field2[i,j,k-1] + self.Hz/self.gridsize
                 elif dist < 2*R: # outside, use ejecta blanket
                     ejecta = int(self.gridsize * ejecta_thickness(dist, R)/self.Hz)
                     for k in range(self.gridsize-1, ejecta, -1):
-                        self.field[i,j,k] = self.field[i,j,k-ejecta]
-                    depth = int(self.gridsize*max_excavation(R)/self.Hz)
-                    self.field[i,j,:ejecta] = self.field[int(x),int(y),depth]
-                    
+                        field2[i,j,k] = self.field[i,j,k-ejecta]
+                    field2[i,j,:ejecta] = self.field[int(x),int(y),depth]
+
+        self.field = field2
         return
 
     def plot(self, suffix, show):
