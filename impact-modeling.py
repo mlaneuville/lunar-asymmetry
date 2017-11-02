@@ -115,9 +115,16 @@ class Surface:
         y *= self.Hxy
         
         for i in range(self.gridsize):
-            for j in range(self.gridsize):
-                dist = np.sqrt((x-i*self.Hxy/self.gridsize)**2 + 
-                               (y-j*self.Hxy/self.gridsize)**2)
+            # loop only over dist(i,j) < 2R
+            dx = x-i*self.Hxy/self.gridsize
+            if abs(dx) > 2*R:
+                continue
+            jmin = int(y - np.sqrt(4*R**2 - dx**2))
+            jmax = int(y + np.sqrt(4*R**2 - dx**2))
+
+            for j in range(max(0,jmin), min(self.Hxy,jmax)):
+                dy = y-j*self.Hxy/self.gridsize
+                dist = np.sqrt(dx**2 + dy**2)
         
                 if dist < R: # within basin, use basin shape
                     excavation = -int(self.gridsize * basin_shape(dist/R, R)/self.Hz)
