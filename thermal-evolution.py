@@ -107,6 +107,7 @@ def radio(t):
 def get_depths(y, mixing='normal-middle', X=20e3):
     N = 1000
     depths_ns, depths_fs = [], []
+    mu, std = {}, {}
 
     db_mu = {
         'low': {'ns':24.9e3, 'fs':25.8e3},
@@ -252,7 +253,7 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, mixing, run, suffix=
 
 
 class Evolution:
-    def __init__(self, run, delay=0, mixing='normal'):
+    def __init__(self, run, delay=0, mixing='normal-middle'):
         self.run = run
         self.mixing = mixing
         self.time = np.logspace(-6, 2, 1000) # in Ma
@@ -328,7 +329,7 @@ class Evolution:
               self.output[-1, 0]/1e3,
               self.output[-1, 2]/1e3))
 
-    def get_mg_distribution(self, mixing='normal'):
+    def get_mg_distribution(self, mixing='normal-middle'):
         y = self.output
         c = self.compo
 
@@ -375,19 +376,13 @@ if __name__ == '__main__':
     PARSER.add_argument('-r', '--run', default='delay', type=str,
                         choices=['delay', 'symmetrical'],
                         help="Run type")
-    PARSER.add_argument('-m', '--mixing', default='normal', type=str,
+    PARSER.add_argument('-m', '--mixing', default='normal-middle', type=str,
                         choices=['normal-low', 'normal-middle', 'normal-high',
                                  'uniform', 'normal-centered'],
                         help="Mixing model")
     PARSER.add_argument('-n', '--num', default=10, type=int,
                         help="Number of runs")
     ARGS = PARSER.parse_args()
-
-    if ARGS.run:
-        evo = Evolution(ARGS.run, mixing=ARGS.mixing)
-        evo.solve()
-        evo.plot()
-        sys.exit()
 
     d = generate_runs(ARGS.num)
     out_stats = []
