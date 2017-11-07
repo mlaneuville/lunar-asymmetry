@@ -344,7 +344,7 @@ class Evolution:
         return [mg_ns.mean(), mg_ns.std(), mg_fs.mean(), mg_fs.std()]
 
     def get_crust_stats(self):
-        idx = np.where(self.delay > self.time)[0][-1]
+        idx = np.where(self.delay < self.time)[0][0]
         return self.output[-1, 0], self.output[-1, 2], self.output[idx, 2]
 
     def plot(self):
@@ -360,12 +360,12 @@ class Evolution:
                      run=self.run,
                      suffix='%s-%s' % (self.run, self.mixing))
 
-def generate_runs(n):
+def generate_runs(ARGS):
     '''Generate a list of parameter sets to explore phase space.'''
     parameters = []
-    for i in range(n):
+    for i in range(ARGS.num):
         delay = random.random()
-        parameters.append({'run': 'delay', 'delay':delay})
+        parameters.append({'run': ARGS.run, 'mixing': ARGS.mixing, 'delay': ARGS.delay})
 
     return parameters
 
@@ -380,17 +380,24 @@ if __name__ == '__main__':
                         choices=['normal-low', 'normal-middle', 'normal-high',
                                  'uniform', 'normal-centered'],
                         help="Mixing model")
+    PARSER.add_argument('-d', '--delay', default=10, type=float,
+                        help="Delay in Ma between near and farside cooling")
+    PARSER.add_argument('--plot', default=False, action="store_true",
+                        help="If true, plot run output in img/ folder")
     PARSER.add_argument('-n', '--num', default=10, type=int,
                         help="Number of runs")
     ARGS = PARSER.parse_args()
 
-    d = generate_runs(ARGS.num)
+    d = generate_runs(ARGS)
     out_stats = []
     
     for i, params in enumerate(d):
         print(params)
         s = Evolution(**params)
         s.solve()
+
+        if ARGS.plot:
+            s.plot()
 
         stats = s.get_mg_distribution()
     
