@@ -22,7 +22,7 @@ def Mg_to_PCS(Mg):
     fits['90'] = [ -2.58074144e-04, 1.11954298e-01, -1.94245707e+01, 1.68486061e+03, -7.30572514e+04, 1.26693581e+06]
     fits['95'] = [ -1.73237110e-04, 7.45526111e-02, -1.28315986e+01, 1.10400284e+03, -4.74796870e+04, 8.16592921e+05]
     fits['00'] = [ 0.5*(a+b) for (a,b) in zip(fits['90'], fits['95'])]
-    c = fits['90']
+    c = fits['95']
 
     inv = []
     for value in Mg:
@@ -40,7 +40,7 @@ def PCS_to_Mg(pcs):
     fits['90'] = [ -2.58074144e-04, 1.11954298e-01, -1.94245707e+01, 1.68486061e+03, -7.30572514e+04, 1.26693581e+06]
     fits['95'] = [ -1.73237110e-04, 7.45526111e-02, -1.28315986e+01, 1.10400284e+03, -4.74796870e+04, 8.16592921e+05]
     fits['00'] = [ 0.5*(a+b) for (a,b) in zip(fits['90'], fits['95'])]
-    c = fits['90']
+    c = fits['95']
 
     pcs_ = pcs*100
     mg = np.polyval(c, pcs_)
@@ -75,7 +75,8 @@ def area(r):
 
 def volume(r):
     '''Returns volume of the shell between RM-r and RM-D0.'''
-    v = 4.*np.pi*((RM-r)**3 - (RM-D0)**3)/3
+    #v = 4.*np.pi*((RM-r)**3 - (RM-D0)**3)/3
+    v = 4.*np.pi*((RM)**3 - (RM-r)**3)/3
     return v
 
 def partitioning(y):

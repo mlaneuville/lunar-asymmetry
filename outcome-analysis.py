@@ -63,8 +63,8 @@ if __name__ == "__main__":
     print(df.info())
 
     # indices which are close enough from Ohtake data
-    mean_ok = np.where(np.logical_and((df["nearside_mean"] - 54.4) < 1,
-                                      (df["farside_mean"] - 63.3) < 1))[0]
+    mean_ok = np.where(np.logical_and(abs(df["nearside_mean"] - 54.4) < 1,
+                                      abs(df["farside_mean"] - 63.3) < 1))[0]
 
     print()
     print("Indices close to observed values: %d (out of %d)" %
