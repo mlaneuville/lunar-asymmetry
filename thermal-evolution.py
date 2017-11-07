@@ -162,9 +162,10 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, mixing, run, suffix=
     ax.set_xlabel("Time [Ma]")
     ax.set_ylabel("Crustal thickness [km]")
     ax.set_xlim(0, max(time))
+    ax.set_ylim(0, 70)
     ax.grid()
     
-    plt.savefig("img/evolution"+"_"+suffix+".png", format="png", bbox_inches="tight")
+    plt.savefig("img/evolution"+suffix+".png", format="png", bbox_inches="tight")
 
     # isotherm depth
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -176,24 +177,11 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, mixing, run, suffix=
     ax.set_xlabel("Time [Ma]")
     ax.set_ylabel("800 K isotherm depth [km]")
     ax.set_xlim(0, max(time))
+    ax.set_ylim(0, 1.05*max(iso_n)/1e3)
     ax.grid()
     
-    plt.savefig("img/isotherms"+"_"+suffix+".png", format="png", bbox_inches="tight")
+    plt.savefig("img/isotherms"+suffix+".png", format="png", bbox_inches="tight")
 
-    # composition profile [in PCS]
-    f, ax = plt.subplots(1, 1, figsize=(8, 8))
-
-    ax.plot(c, y[:, 0]/1e3, 'r', label='nearside', lw=2)
-    if run != "symmetrical":
-        ax.plot(c, y[:, 2]/1e3, 'g', label='farside', lw=2)
-        ax.legend(loc='best')
-    ax.set_xlabel("PCS at time of crystallization [-]")
-    ax.set_ylabel("Crustal thickness [km]")
-    ax.set_ylim(max(y[:,2])/1e3, 0)
-    ax.grid()
-    
-    plt.savefig("img/composition_PCS"+"_"+suffix+".png", format="png", bbox_inches="tight")
-    
     # composition profile [in Mg#]
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
     
@@ -203,32 +191,37 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, mixing, run, suffix=
         ax.legend(loc='best')
     ax.set_xlabel("Magnesium number [-]")
     ax.set_ylabel("Crustal thickness [km]")
-    ax.set_ylim(max(y[:, 2])/1e3, 0)
+    ax.set_ylim(70, 0)
     ax.grid()
     
-    plt.savefig("img/composition_Mg"+"_"+suffix+".png", format="png", bbox_inches="tight")
+    plt.savefig("img/composition"+suffix+".png", format="png", bbox_inches="tight")
 
     # orbital distance
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
-    ax.plot(time, a, lw=2)
+    ax.plot(time, a, 'k', lw=2)
     ax.set_xlabel("Time [Ma]")
     ax.set_ylabel("Semimajor axis [R$_{earth}$]")
     ax.set_xscale("log")
+    ax.set_ylim(0, 60)
+    ax.set_xlim(min(time), max(time))
     ax.grid()
 
-    plt.savefig("img/semimajor"+"_"+suffix+".png", format="png", bbox_inches="tight")
+    plt.savefig("img/semimajor"+suffix+".png", format="png", bbox_inches="tight")
 
     # surface properties
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
-    ax.plot(time, hfs_n, lw=2, label='nearside')
-    ax.plot(time, hfs_f, lw=2, label='farside')
+    ax.plot(time, hfs_n, 'r', lw=2, label='nearside')
+    ax.plot(time, hfs_f, 'g', lw=2, label='farside')
+    ax.axhline(1361, color='k', ls='--')
     ax.set_xlabel("Time [Ma]")
     ax.set_ylabel("Surface heat flow [W/m$^2$]")
     ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlim(min(time), max(time))
     ax.legend(loc='best')
     ax.grid()
 
-    plt.savefig("img/surface_hf"+"_"+suffix+".png", format="png", bbox_inches="tight")
+    plt.savefig("img/surface_hf"+suffix+".png", format="png", bbox_inches="tight")
 
     # composition sample
     f, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -249,7 +242,7 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, mixing, run, suffix=
     ax.set_yticks(np.arange(0, 0.55, 0.1))
     ax.grid()
     
-    plt.savefig("img/depth_sampling"+"_"+suffix+".png", format="png", bbox_inches="tight")
+    plt.savefig("img/distribution"+suffix+".png", format="png", bbox_inches="tight")
 
 
 class Evolution:
@@ -347,7 +340,15 @@ class Evolution:
         idx = np.where(self.delay < self.time)[0][0]
         return self.output[-1, 0], self.output[-1, 2], self.output[idx, 2]
 
-    def plot(self):
+    def plot(self, args):
+        suffix = '-'
+        for k,v in args.items():
+            if k == 'delay':
+                suffix += "%s:%.2f-" % (k,v)
+            else:
+                suffix += "%s:%s-" % (k,v)
+        suffix = suffix[:-1]
+
         plot_results(self.time, 
                      self.output, 
                      self.iso_n,
@@ -358,14 +359,17 @@ class Evolution:
                      self.hfs_f,
                      mixing=self.mixing,
                      run=self.run,
-                     suffix='%s-%s' % (self.run, self.mixing))
+                     suffix=suffix)
 
 def generate_runs(ARGS):
     '''Generate a list of parameter sets to explore phase space.'''
     parameters = []
     for i in range(ARGS.num):
-        delay = random.random()
-        parameters.append({'run': ARGS.run, 'mixing': ARGS.mixing, 'delay': ARGS.delay})
+        if ARGS.delay is None:
+            delay = random.random()
+        else:
+            delay = ARGS.delay
+        parameters.append({'run': ARGS.run, 'mixing': ARGS.mixing, 'delay': delay})
 
     return parameters
 
@@ -380,7 +384,7 @@ if __name__ == '__main__':
                         choices=['normal-low', 'normal-middle', 'normal-high',
                                  'uniform', 'normal-centered'],
                         help="Mixing model")
-    PARSER.add_argument('-d', '--delay', default=10, type=float,
+    PARSER.add_argument('-d', '--delay', type=float,
                         help="Delay in Ma between near and farside cooling")
     PARSER.add_argument('--plot', default=False, action="store_true",
                         help="If true, plot run output in img/ folder")
@@ -397,7 +401,7 @@ if __name__ == '__main__':
         s.solve()
 
         if ARGS.plot:
-            s.plot()
+            s.plot(params)
 
         stats = s.get_mg_distribution()
     
