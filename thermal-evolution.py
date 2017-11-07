@@ -47,7 +47,7 @@ RC = 400e3  # moon core radius
 RE = 6370e3 # earth radius
 MM = 5.972e24 # moon mass
 ME = 7.348e22 # earth mass
-D0 = 125e3  # initial depth at which the crust starts to crystallize
+D0 = 100e3  # initial depth at which the crust starts to crystallize
 VOL_MANTLE = 4*np.pi*(RM**3 - RC**3)/3
 
 # this needs to be defined only once
@@ -66,14 +66,14 @@ def area(r):
 
 def volume(r):
     '''Returns volume of the shell between RM-r and RM-D0.'''
-    #v = 4.*np.pi*((RM-r)**3 - (RM-D0)**3)/3
-    v = 4.*np.pi*((RM)**3 - (RM-r)**3)/3
+    v = 4.*np.pi*((RM-r)**3 - (RM-D0)**3)/3
     return v
 
 def partitioning(y):
     '''Takes crustal thickness as input and returns PCS.'''    
     mean_crust = 0.5*(y[0]+y[2])
-    return 1 - volume(mean_crust)/VOL_MANTLE
+    v = 4.*np.pi*(RM**3 - (RM-mean_crust)**3)/3
+    return 0.85 + v/VOL_MANTLE
 
 def isotherm(y, t, phi, T=800):
     '''Returns the depth of an isotherm for a given timestep.'''
