@@ -13,40 +13,31 @@ from numpy import random
 import argparse
 import json
 import sys
+import pickle
 
 plt.rcParams.update({'font.size': 16, 'axes.labelsize': 'large'})
+frac = 0.94 # updated with command line
+
+with open("fit.p", "rb") as f:
+    fit = pickle.load(f)
 
 def Mg_to_PCS(Mg):
-    fits = {}
-    fits['80'] = [ -3.19574082e-04, 1.39071011e-01, -2.42050960e+01, 2.10607708e+03, -9.16066292e+04, 1.59355528e+06]
-    fits['90'] = [ -2.58074144e-04, 1.11954298e-01, -1.94245707e+01, 1.68486061e+03, -7.30572514e+04, 1.26693581e+06]
-    fits['95'] = [ -1.73237110e-04, 7.45526111e-02, -1.28315986e+01, 1.10400284e+03, -4.74796870e+04, 8.16592921e+05]
-    fits['00'] = [ 0.5*(a+b) for (a,b) in zip(fits['90'], fits['95'])]
-    c = fits['95']
-
+    pcs = np.linspace(83, 97, 500)
     inv = []
     for value in Mg:
-        p = np.poly1d(c) - value
-        real_roots = p.r[np.where(p.r.imag == 0)]
-        if len(real_roots) > 1:
-            print("more than one real root")
-        inv.append(real_roots[0].real)
+        v = np.polynomial.polynomial.polyval(frac, fit) - value
+        inv.append(pcs[np.where(v > 0)[0][-1]])
     return np.array(inv)
 
-def PCS_to_Mg(pcs):
-    '''Assumes linear variation with PCS.'''
-    fits = {}
-    fits['80'] = [ -3.19574082e-04, 1.39071011e-01, -2.42050960e+01, 2.10607708e+03, -9.16066292e+04, 1.59355528e+06]
-    fits['90'] = [ -2.58074144e-04, 1.11954298e-01, -1.94245707e+01, 1.68486061e+03, -7.30572514e+04, 1.26693581e+06]
-    fits['95'] = [ -1.73237110e-04, 7.45526111e-02, -1.28315986e+01, 1.10400284e+03, -4.74796870e+04, 8.16592921e+05]
-    fits['00'] = [ 0.5*(a+b) for (a,b) in zip(fits['90'], fits['95'])]
-    c = fits['95']
-
-    pcs_ = pcs*100
-    mg = np.polyval(c, pcs_)
-    mg[np.where(mg < 0)] = 0
-    
-    return mg
+def PCS_to_Mg(target):
+    target_ = target*100
+    pcs = np.linspace(83, 97, 500)
+    ret = []
+    for p in target_:
+        idx = np.where(p > pcs)[0][-1]
+        mg = np.polynomial.polynomial.polyval(frac, fit)[idx]
+        ret.append(max(mg, 0))
+    return ret
 
 G = 6.67e-11 # gravitational constant, m3/kg/s2
 YEAR = 365*24*3600. # a year in seconds
@@ -247,13 +238,14 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, mixing, run, suffix=
 
 
 class Evolution:
-    def __init__(self, run, delay, k2Q, mixing='normal-middle'):
+    def __init__(self, run, delay, k2Q, plag, mixing='normal-middle'):
         self.run = run
         self.mixing = mixing
         self.time = np.logspace(-6, 2, 1000) # in Ma
         self.output = 0
         self.compo= 0
         self.k2Q = k2Q
+        self.plag = plag
         self.semimajor = A0
         self.delay = delay
 
@@ -372,7 +364,7 @@ def generate_runs(ARGS):
         else:
             delay = ARGS.delay
         parameters.append({'run': ARGS.run, 'mixing': ARGS.mixing,
-                           'delay': delay, 'k2Q': ARGS.k2Q })
+                           'delay': delay, 'k2Q': ARGS.k2Q, 'plag': ARGS.plag})
 
     return parameters
 
@@ -389,6 +381,8 @@ if __name__ == '__main__':
                         help="Mixing model")
     PARSER.add_argument('-d', '--delay', type=float,
                         help="Delay in Ma between near and farside cooling")
+    PARSER.add_argument('--plag', type=float, default=0.94,
+                        help="Plag fraction in anorthosite")
     PARSER.add_argument('--k2Q', type=float, default=0.024,
                         help="Delay in Ma between near and farside cooling")
     PARSER.add_argument('--plot', default=False, action="store_true",
@@ -397,6 +391,7 @@ if __name__ == '__main__':
                         help="Number of runs")
     ARGS = PARSER.parse_args()
 
+    frac = ARGS.plag
     d = generate_runs(ARGS)
     out_stats = []
     
