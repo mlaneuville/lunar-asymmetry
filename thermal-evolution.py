@@ -65,7 +65,7 @@ RHO = 3300.      # average crustal density, kg
 CP = 1000.       # specific heat of the crust, J/K/kg
 GRAD_TL = 2.5e-4 #
 
-k2Q = 0.024
+# orbital
 A0 = RE
 
 def area(r):
@@ -246,12 +246,13 @@ def plot_results(time, y, iso_n, iso_f, c, a, hfs_n, hfs_f, mixing, run, suffix=
 
 
 class Evolution:
-    def __init__(self, run, delay=0, mixing='normal-middle'):
+    def __init__(self, run, delay, k2Q, mixing='normal-middle'):
         self.run = run
         self.mixing = mixing
         self.time = np.logspace(-6, 2, 1000) # in Ma
         self.output = 0
         self.compo= 0
+        self.k2Q = k2Q
         self.semimajor = A0
         self.delay = delay
 
@@ -259,7 +260,7 @@ class Evolution:
         def orbit(a, t):
             '''Eq. 4.213 from SSD'''
             res = 2/13*a**(13./2)*(1-(A0/a)**(13./2))
-            res -= 3/2*k2Q*(G/ME)**0.5*RE**5*MM*t
+            res -= 3/2*self.k2Q*(G/ME)**0.5*RE**5*MM*t
             return res
         r = fsolve(orbit, self.semimajor*RE, factor=10, args=(t*MA))[0]
         return max(A0, r)
@@ -369,7 +370,8 @@ def generate_runs(ARGS):
             delay = random.random()
         else:
             delay = ARGS.delay
-        parameters.append({'run': ARGS.run, 'mixing': ARGS.mixing, 'delay': delay})
+        parameters.append({'run': ARGS.run, 'mixing': ARGS.mixing,
+                           'delay': delay, 'k2Q': ARGS.k2Q })
 
     return parameters
 
@@ -385,6 +387,8 @@ if __name__ == '__main__':
                                  'uniform', 'normal-centered'],
                         help="Mixing model")
     PARSER.add_argument('-d', '--delay', type=float,
+                        help="Delay in Ma between near and farside cooling")
+    PARSER.add_argument('--k2Q', type=float, default=0.024,
                         help="Delay in Ma between near and farside cooling")
     PARSER.add_argument('--plot', default=False, action="store_true",
                         help="If true, plot run output in img/ folder")
