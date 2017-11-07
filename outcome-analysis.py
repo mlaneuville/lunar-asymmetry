@@ -69,10 +69,13 @@ if __name__ == "__main__":
     print()
     print("Indices close to observed values: %d (out of %d)" %
           (len(mean_ok), len(df)))
-    print("Delay of acceptable runs: %.1f +/- %.1f Ma" %
-          (df["delay"].iloc[mean_ok].mean(), df["delay"].iloc[mean_ok].std()))
-    print("Farside crust size when t > delay for acceptable runs: %.1f +/- %.1f km" %
-          (df["front"].iloc[mean_ok].mean(), df["front"].iloc[mean_ok].std()))
+    if len(mean_ok) > 0:
+        print("Delay of acceptable runs: %.1f +/- %.1f Ma" %
+              (df["delay"].iloc[mean_ok].mean(), df["delay"].iloc[mean_ok].std()))
+        print("Farside crust size when t > delay for acceptable runs: %.1f +/- %.1f km" %
+              (df["front"].iloc[mean_ok].mean(), df["front"].iloc[mean_ok].std()))
+    else:
+        mean_ok = df.index
     print()
 
     columns = ["delay"] #, "depth_min_fs", "depth_max_fs","depth_min_ns", "depth_max_ns"]
