@@ -56,7 +56,7 @@ RC = 400e3  # moon core radius
 RE = 6370e3 # earth radius
 MM = 5.972e24 # moon mass
 ME = 7.348e22 # earth mass
-D0 = 80e3  # initial depth at which the crust starts to crystallize
+D0 = 125e3  # initial depth at which the crust starts to crystallize
 VOL_MANTLE = 4*np.pi*(RM**3 - RC**3)/3
 
 # this needs to be defined only once
