@@ -43,12 +43,15 @@ def max_excavation(R, loc="farside"):
     # From Miljkovic et al 2016 (table 1)
     # and Potter et al 2015 (eq7)
     params = {}
-    params["farside"] = (6.59, 0.69)
-    params["nearside"] = (1.56, 0.90)
-    params["pkt"] = (0.57, 1.05)
-    A, b = params[loc]
-    
-    Dtr = A*R**b
+    params["farside"] = (6.59, 0.69, 2.11, 0.85)
+    params["nearside"] = (1.56, 0.90, 0.35, 1.12)
+    params["pkt"] = (0.57, 1.05, 0.04, 1.45)
+    A1, b1, A2, b2 = params[loc]
+
+    C = R*17**0.58 # R is diameter here
+    Dthin = (C/A2)**(1./b2)
+    Dtr = A1*Dthin**b1
+
     return Dtr*0.12
 
 def get_impact_distribution(era=''):
