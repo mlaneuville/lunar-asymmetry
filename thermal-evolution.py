@@ -246,8 +246,13 @@ def generate_runs(ARGS):
             delay = random.random()
         else:
             delay = ARGS.delay
+        if ARGS.plag is None:
+            plag = random.uniform(0.8, 0.97)
+        else:
+            plag = ARGS.plag
+        frac = plag
         parameters.append({'run': ARGS.run, 'mixing': ARGS.mixing,
-                           'delay': delay, 'k2Q': ARGS.k2Q, 'plag': ARGS.plag})
+                           'delay': delay, 'k2Q': ARGS.k2Q, 'plag': plag})
 
     return parameters
 
@@ -385,7 +390,7 @@ if __name__ == '__main__':
                         help="Mixing model")
     PARSER.add_argument('-d', '--delay', type=float,
                         help="Delay in Ma between near and farside cooling")
-    PARSER.add_argument('--plag', type=float, default=0.94,
+    PARSER.add_argument('--plag', type=float,
                         help="Plag fraction in anorthosite")
     PARSER.add_argument('--k2Q', type=float, default=0.024,
                         help="k2/Q ratio for the Earth")
@@ -395,7 +400,6 @@ if __name__ == '__main__':
                         help="Number of runs")
     ARGS = PARSER.parse_args()
 
-    frac = ARGS.plag
     d = generate_runs(ARGS)
     out_stats = []
 

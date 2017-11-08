@@ -72,6 +72,8 @@ if __name__ == "__main__":
     if len(mean_ok) > 0:
         print("Delay of acceptable runs: %.1f +/- %.1f Ma" %
               (df["delay"].iloc[mean_ok].mean(), df["delay"].iloc[mean_ok].std()))
+        print("Plag fraction of acceptable runs: %.2f +/- %.2f" %
+              (df["plag"].iloc[mean_ok].mean(), df["plag"].iloc[mean_ok].std()))
         print("Farside crust size when t > delay for acceptable runs: %.1f +/- %.1f km" %
               (df["front"].iloc[mean_ok].mean(), df["front"].iloc[mean_ok].std()))
     else:
@@ -85,15 +87,20 @@ if __name__ == "__main__":
 
     ohtake_data = {'mean_ns':54.4, 'mean_fs':63.3, 'std_ns':5, 'std_fs':5}
     labels = {"delay": "Nearside/farside crystallization delay [Ma]",
+              "plag": "Anorthosite plagioclase fraction [-]",
               "tau": "Cooling asymmetry timescale [Ma]",
               "F0": "Farside heat flow [W/m/K]",
               "F1": "Initial nearside heat flow [W/m/K]"}
 
     f, ax = plt.subplots(figsize=(8, 8))
     make_scatter_plot(ax, 'mean', 'delay')
-    plt.savefig("img/analysis-minvis-distribution.jpg", dpi=300)
+    plt.savefig("img/analysis-minvis-distribution-delay.jpg", dpi=300)
 
-    cols = ['delay', 'front', 'delta_crust'] #'nearside_mean', 'farside_mean',
+    f, ax = plt.subplots(figsize=(8, 8))
+    make_scatter_plot(ax, 'mean', 'plag')
+    plt.savefig("img/analysis-minvis-distribution-plag.jpg", dpi=300)
+
+    cols = ['delay', 'plag', 'front', 'delta_crust'] #'nearside_mean', 'farside_mean',
     idx = np.where(df["nearside_mean"] > 40)[0]
     sns.pairplot(df[cols].iloc[mean_ok], size=4, diag_kind='kde')
     plt.savefig("img/analysis-pairplot.png", format="png", dpi=300)
