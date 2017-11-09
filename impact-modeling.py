@@ -27,7 +27,7 @@ def ejecta_thickness(r, L=1, a=0.14, b=0.74, c=-3.0):
         else:
             return a*R**b*(r/R)**c/1e3
 
-    idx = np.where(r > R)[0]
+    idx = np.where(r >= R)[0]
     dout = a*R**b*(r[idx]/R)**c/1e3
 
     idx = np.where(r < R)[0]
@@ -116,8 +116,9 @@ class Surface:
     
     def impact(self, x, y, L, loc):
         R = L/2
-        depth = int(self.gridsize*max_excavation(L)/self.Hz)
         field2 = deepcopy(self.field)
+        depth = int(self.gridsize*max_excavation(L)/self.Hz)
+        stratigraphy = self.field[int(x), int(y), :depth]
 
         x *= self.Hxy
         y *= self.Hxy
@@ -148,7 +149,7 @@ class Surface:
                     ejecta = int(self.gridsize * ejecta_thickness(dist, R)/self.Hz)
                     for k in range(self.gridsize-1, ejecta, -1):
                         field2[i,j,k] = self.field[i,j,k-ejecta]
-                    field2[i,j,:ejecta] = self.field[int(x),int(y),depth]
+                    field2[i,j,:ejecta] = stratigraphy[ejecta::-1]
 
         self.field = field2
         return
