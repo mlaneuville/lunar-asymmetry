@@ -16,18 +16,19 @@ import pickle
 font = {'size'   : 14}
 rc('font', **font)
 
-def ejecta_thickness(r, R=1, a=0.14, b=0.74, c=-3.0):
+def ejecta_thickness(r, L=1, a=0.14, b=0.74, c=-3.0):
     # Eq. 1.9 in Sturm 2016, JGR:P
     r = np.array(r)
+    R = L*1e3/2
     
     if not r.shape:
         if r < R:
             return 0
         else:
-            return a*R**b*(r/R)**c
+            return a*R**b*(r/R)**c/1e3
 
     idx = np.where(r > R)[0]
-    dout = a*R**b*(r[idx]/R)**c
+    dout = a*R**b*(r[idx]/R)**c/1e3
 
     idx = np.where(r < R)[0]
     din = 0*r[idx]
@@ -39,7 +40,7 @@ def basin_shape(x, R=1):
     y = 2*R/5*(x**2-1)
     return y
 
-def max_excavation(R, loc="farside"):
+def max_excavation(L, loc="farside"):
     # From Miljkovic et al 2016 (table 1)
     # and Potter et al 2015 (eq7)
     params = {}
@@ -48,7 +49,7 @@ def max_excavation(R, loc="farside"):
     params["pkt"] = (0.57, 1.05, 0.04, 1.45)
     A1, b1, A2, b2 = params[loc]
 
-    C = R*17**0.58 # R is diameter here
+    C = L*17**0.58
     Dthin = (C/A2)**(1./b2)
     Dtr = A1*Dthin**b1
 
@@ -110,11 +111,12 @@ class Surface:
     def generate_impact(self, era='all'):
         '''xy position and impact diameter'''
         x, y = random.random(), random.random()
-        D = self.d[era].rvs()
-        return (x,y), D
+        L = self.d[era].rvs()
+        return (x,y), L
     
-    def impact(self, x, y, R, loc):
-        depth = int(self.gridsize*max_excavation(R)/self.Hz)
+    def impact(self, x, y, L, loc):
+        R = L/2
+        depth = int(self.gridsize*max_excavation(L)/self.Hz)
         field2 = deepcopy(self.field)
 
         x *= self.Hxy
@@ -210,8 +212,8 @@ def main(rheo, giant, large, small, show=False):
         output = epoch['output']
 
         for i in range(n_impacts):
-            (x, y), D = moon.generate_impact(era=era)
-            moon.impact(x, y, D/2, loc=rheo)
+            (x, y), L = moon.generate_impact(era=era)
+            moon.impact(x, y, L, loc=rheo)
         
             if ((i % output) == output-1) or (i == n_impacts - 1):
                 print(i)
